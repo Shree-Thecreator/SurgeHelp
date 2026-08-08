@@ -1,9 +1,9 @@
 import os
 import httpx
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import List, Dict, Optional
+from typing import Optional
 from dotenv import load_dotenv
 from google import genai
 
@@ -69,26 +69,6 @@ RESOURCE_CENTERS = [
     }
 ]
 
-class ConnectionManager:
-    def __init__(self):
-        self.active_connections: Dict[str, WebSocket] = {}
-
-    async def connect(self, client_id: str, websocket: WebSocket):
-        await websocket.accept()
-        self.active_connections[client_id] = websocket
-
-    def disconnect(self, client_id: str):
-        if client_id in self.active_connections:
-            del self.active_connections[client_id]
-
-    async def broadcast(self, message: dict):
-        for connection in list(self.active_connections.values()):
-            try:
-                await connection.send_json(message)
-            except Exception:
-                pass
-
-manager = ConnectionManager()
 
 def analyze_emergency_with_ai(user_message: str) -> str:
     if not gemini_client:
@@ -197,12 +177,6 @@ async def create_map_zone(zone: NewMapZone):
         "radius_meters": zone.radius_meters
     }
     CUSTOM_MAP_ZONES.append(new_zone)
-
-    await manager.broadcast({
-        "type": "NEW_MAP_ZONE",
-        "zone": new_zone
-    })
-
     return {"status": "success", "data": new_zone}
 
 @app.get("/api/resource-centers")
@@ -220,12 +194,6 @@ async def create_resource_center(center: NewResourceCenter):
         "details": center.details
     }
     RESOURCE_CENTERS.append(new_center)
-
-    await manager.broadcast({
-        "type": "NEW_RESOURCE_CENTER",
-        "center": new_center
-    })
-
     return {"status": "success", "data": new_center}
 
 @app.post("/api/emergency-sos")
@@ -239,35 +207,9 @@ async def trigger_sos(alert: EmergencyAlert):
         "message": alert.message,
         "ai_assessment": ai_assessment
     }
-    
-    await manager.broadcast(sos_payload)
     return {"status": "sos_sent", "payload": sos_payload}
 
 @app.post("/api/analyze")
 async def analyze_text(req: AIAnalysisRequest):
     analysis = analyze_emergency_with_ai(req.message)
     return {"status": "success", "analysis": analysis}
-
-# --- WEBSOCKET FOR REAL-TIME CHAT & PUSH ALERTS ---
-
-@app.websocket("/ws/{client_id}")
-async def websocket_endpoint(websocket: WebSocket, client_id: str):
-    await manager.connect(client_id, websocket)
-    try:
-        while True:
-            data = await websocket.receive_json()
-            
-            broadcast_payload = {
-                "type": data.get("type", "CHAT"),
-                "sender_id": client_id,
-                "text": data.get("text", ""),
-                "location": data.get("location", None)
-            }
-            await manager.broadcast(broadcast_payload)
-            
-    except WebSocketDisconnect:
-        manager.disconnect(client_id)
-        await manager.broadcast({
-            "type": "SYSTEM",
-            "text": f"User {client_id} disconnected."
-        })
