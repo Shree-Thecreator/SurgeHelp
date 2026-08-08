@@ -24,8 +24,9 @@ import {
 import ParticleSphereAnimation from "../components/ui/orbiting-circles-02-utils/particalsPhear";
 import { BorderBeamPanel } from "@/components/ui/border-beam-panel";
 
-const DisasterMap = dynamic(() => import("../components/DisasterMap"), {
+const DisasterMap = dynamic(() => import('@/components/DisasterMap'), {
   ssr: false,
+  loading: () => <p>Loading map...</p>,
 });
 
 interface Message {
@@ -384,13 +385,13 @@ export default function Home() {
                 <div className="flex items-center justify-between pb-2 border-b border-slate-800">
                   <div className="flex items-center gap-2">
                     <MapPin size={14} className="text-emerald-400" />
-                    <span className="text-xs font-semibold text-white">
+                    <span className="text-xs font-semibold text-black">
                       {region.city}, {region.district}
                     </span>
                   </div>
                   <button
                     onClick={() => setIsChatActive(false)}
-                    className="text-[10px] text-slate-400 hover:text-white underline"
+                    className="text-[10px] text-slate-400 hover:text-blue-400 underline"
                   >
                     Change Region
                   </button>

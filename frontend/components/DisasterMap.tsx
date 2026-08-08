@@ -75,44 +75,56 @@ export default function DisasterMap({
   selectedLocation: { lat: number; lng: number };
   locationName: string;
 }) {
+  const [isMounted, setIsMounted] = useState(false);
   const [zones, setZones] = useState<Zone[]>([]);
   const [resources, setResources] = useState<ResourceCenter[]>([]);
 
+  // Prevent SSR execution of React Leaflet DOM nodes
   useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isMounted) return;
+
     // Fetch Danger & Safe Zones
     fetch("http://localhost:8000/api/map-zones")
       .then((res) => res.json())
-      .then((res) => setZones(res.data))
+      .then((res) => setZones(Array.isArray(res.data) ? res.data : []))
       .catch((err) => console.error("Error fetching map zones:", err));
 
     // Fetch Relief, Food, and Helping Centers
     fetch("http://localhost:8000/api/resource-centers")
       .then((res) => res.json())
-      .then((res) => setResources(res.data))
+      .then((res) => setResources(Array.isArray(res.data) ? res.data : []))
       .catch((err) => console.error("Error fetching resource centers:", err));
-  }, []);
+  }, [isMounted]);
+
+  if (!isMounted) {
+    return (
+      <div className="w-full h-full min-h-[420px] flex items-center justify-center bg-slate-900 text-slate-400 text-sm">
+        Initializing map layers...
+      </div>
+    );
+  }
 
   return (
     <MapContainer
-      {...({
-        center: [selectedLocation.lat, selectedLocation.lng],
-        zoom: 12,
-        className: "h-full w-full z-0 rounded-lg",
-      } as any)}
+      key={`${selectedLocation.lat}-${selectedLocation.lng}`}
+      center={[selectedLocation.lat, selectedLocation.lng]}
+      zoom={12}
+      className="h-full w-full z-0 rounded-lg min-h-[420px]"
     >
       <TileLayer
-        {...({
-          attribution:
-            '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-          url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-        } as any)}
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
 
       {/* Recenter Map on New Search Location */}
       <MapRecenter targetLocation={selectedLocation} />
 
       {/* Searched Location Marker */}
-      <Marker position={[selectedLocation.lat, selectedLocation.lng]} {...({ icon: customIcon } as any)}>
+      <Marker position={[selectedLocation.lat, selectedLocation.lng]} icon={customIcon}>
         <Popup>📍 Searched Area: {locationName}</Popup>
       </Marker>
 
@@ -128,7 +140,7 @@ export default function DisasterMap({
         return (
           <Circle
             key={zone.id}
-            center={[zone.coordinates.lat, zone.coordinates.lng] as [number, number]}
+            center={[zone.coordinates.lat, zone.coordinates.lng]}
             radius={zone.radius_meters}
             pathOptions={{
               color: color,
@@ -153,7 +165,7 @@ export default function DisasterMap({
         <Marker
           key={center.id}
           position={[center.coordinates.lat, center.coordinates.lng]}
-          {...({ icon: resourceIcons[center.category] } as any)}
+          icon={resourceIcons[center.category] || customIcon}
         >
           <Popup>
             <div className="font-bold text-slate-900 text-sm">{center.name}</div>
