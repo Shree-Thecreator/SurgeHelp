@@ -102,7 +102,7 @@ export default function DisasterMap({
 
   if (!isMounted) {
     return (
-      <div className="w-full h-full min-h-[420px] flex items-center justify-center bg-slate-900 text-slate-400 text-sm">
+      <div className="w-full h-full min-h-105 flex items-center justify-center bg-slate-900 text-slate-400 text-sm">
         Initializing map layers...
       </div>
     );
@@ -113,7 +113,7 @@ export default function DisasterMap({
       key={`${selectedLocation.lat}-${selectedLocation.lng}`}
       center={[selectedLocation.lat, selectedLocation.lng]}
       zoom={12}
-      className="h-full w-full z-0 rounded-lg min-h-[420px]"
+      className="h-full w-full z-0 rounded-lg min-h-105"
     >
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'

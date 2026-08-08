@@ -47,7 +47,7 @@ RESOURCE_CENTERS = [
         "id": "rc-1",
         "name": "Salt Lake Stadium Shelter",
         "category": "RELIEF_CENTER",
-        "contact": "+91 98765 43210",
+        "contact": "+91 9000000000",
         "coordinates": {"lat": 22.5700, "lng": 88.4020},
         "details": "Capacity: 1200 people. Clean drinking water & medical beds."
     },
@@ -55,7 +55,7 @@ RESOURCE_CENTERS = [
         "id": "fc-1",
         "name": "Central Emergency Ration Kitchen",
         "category": "FOOD_CENTER",
-        "contact": "+91 98765 12345",
+        "contact": "+91 9000000000",
         "coordinates": {"lat": 22.5650, "lng": 88.3550},
         "details": "Prepared meal packets and dry rations served 24/7."
     },
@@ -63,7 +63,7 @@ RESOURCE_CENTERS = [
         "id": "hc-1",
         "name": "Kolkata Rapid Response Medical Post",
         "category": "HELP_CENTER",
-        "contact": "+91 91234 56789",
+        "contact": "+91 9000000000",
         "coordinates": {"lat": 22.5780, "lng": 88.3680},
         "details": "Trauma care, basic first aid, and ambulance station."
     }
