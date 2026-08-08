@@ -15,11 +15,14 @@ import {
   Compass,
   Maximize2,
   Minimize2,
+  MapPin,
+  ArrowRight,
+  MessageSquare,
+  Globe,
 } from "lucide-react";
 
-
 import ParticleSphereAnimation from "../components/ui/orbiting-circles-02-utils/particalsPhear";
-
+import { BorderBeamPanel } from "@/components/ui/border-beam-panel";
 
 const DisasterMap = dynamic(() => import("../components/DisasterMap"), {
   ssr: false,
@@ -61,14 +64,14 @@ const orbits = [
     ],
   },
 ];
+
 export default function Home() {
   const [userId, setUserId] = useState<string | null>(null);
-  const [isFullScreen, setIsFullScreen] = useState(false); // Added full-screen map state
+  const [isFullScreen, setIsFullScreen] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<{ lat: number; lng: number }>({
     lat: 22.5726,
     lng: 88.3639,
   });
-  // ... rest of your code
   const [locationName, setLocationName] = useState("Kolkata, West Bengal");
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
@@ -77,14 +80,21 @@ export default function Home() {
   const [inputText, setInputText] = useState("");
   const socketRef = useRef<WebSocket | null>(null);
 
-  
+  // Region Selection State
+  const [isChatActive, setIsChatActive] = useState(false);
+  const [region, setRegion] = useState({
+    country: "India",
+    state: "West Bengal",
+    district: "Kolkata",
+    city: "Kolkata Central",
+  });
+
   useEffect(() => {
     setUserId("user_" + Math.random().toString(36).substring(2, 7));
   }, []);
 
- 
   useEffect(() => {
-    if (!userId) return;
+    if (!userId || !isChatActive) return;
     const ws = new WebSocket(`ws://localhost:8000/ws/${userId}`);
     socketRef.current = ws;
 
@@ -94,9 +104,8 @@ export default function Home() {
     };
 
     return () => ws.close();
-  }, [userId]);
+  }, [userId, isChatActive]);
 
-  
   const handleLocationSearch = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     if (!searchQuery.trim()) return;
@@ -128,7 +137,6 @@ export default function Home() {
     }
   };
 
-  // Broadcast WebSocket Message
   const sendMessage = () => {
     if (!inputText.trim() || !socketRef.current) return;
     socketRef.current.send(
@@ -136,12 +144,12 @@ export default function Home() {
         type: "CHAT",
         text: inputText,
         location: selectedLocation,
+        region: `${region.city}, ${region.district}`,
       })
     );
     setInputText("");
   };
 
-  // Trigger Emergency SOS REST Call
   const triggerSOS = async () => {
     if (!userId) return alert("User ID not ready");
     await fetch("http://localhost:8000/api/emergency-sos", {
@@ -158,7 +166,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 font-sans flex flex-col">
-      {/* Dynamic Keyframes for CSS Orbiting Animations */}
       <style>{`
         @keyframes orbit-cw {
           from { transform: rotate(var(--start-angle)) }
@@ -178,7 +185,7 @@ export default function Home() {
         }
       `}</style>
 
-      {/* HEADER SECTION: TITLE & ORBITING CIRCLES GLOBE HERO */}
+      {/* HEADER SECTION */}
       <header className="relative bg-linear-to-b from-slate-900 via-slate-900 to-slate-950 pt-8 pb-4 border-b border-slate-800">
         <div className="max-w-7xl mx-auto px-4 text-center relative z-20">
           <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-semibold uppercase tracking-wider mb-3">
@@ -192,14 +199,11 @@ export default function Home() {
           </p>
         </div>
 
-        {/* Orbiting Circles Visual Graphic */}
         <div className="relative w-full h-70 md:h-90 overflow-hidden flex justify-center items-end mt-2">
-          {/* Center Particle Sphere Animation */}
           <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 aspect-square pointer-events-none w-55 md:w-87.5 z-10">
             <ParticleSphereAnimation />
           </div>
 
-          {/* Orbiting Rings */}
           {orbits.map((orbit, index) => {
             const isCW = index % 2 === 0;
             const orbitAnim = isCW ? "orbit-cw" : "orbit-ccw";
@@ -252,129 +256,195 @@ export default function Home() {
         </div>
       </header>
 
-      {/* DASHBOARD: MAP, COMMUNITY CONNECT & SOS FIND HELP */}
+      {/* DASHBOARD GRID */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* FEATURE 1: MAP FOR DANGER ZONE */}
-      <section
-  className={
-    isFullScreen
-      ? "fixed inset-0 z-50 bg-slate-900 p-4 sm:p-6 flex flex-col"
-      : "lg:col-span-2 bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col shadow-xl"
-  }
->
-  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
-    <h2 className="text-lg font-bold text-white flex items-center gap-2">
-      <AlertTriangle className="text-amber-500" /> Map for Danger Zone
-    </h2>
-
-    <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-2">
-      {/* Geocoding Location Search */}
-      <form onSubmit={handleLocationSearch} className="flex w-full sm:w-auto gap-2">
-        <input
-          type="text"
-          className="bg-slate-800 border border-slate-700 text-white rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-64"
-          placeholder="Search region (e.g., Assam, Kolkata)..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-        />
-        <button
-          type="submit"
-          disabled={isSearching}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-sm flex items-center gap-1 font-medium transition disabled:opacity-50"
+        {/* MAP SECTION */}
+        <section
+          className={
+            isFullScreen
+              ? "fixed inset-0 z-50 bg-slate-900 p-4 sm:p-6 flex flex-col"
+              : "lg:col-span-2 bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col shadow-xl"
+          }
         >
-          <Search size={14} /> {isSearching ? "..." : "Search"}
-        </button>
-      </form>
-
-      {/* Full Screen Map Toggle Button */}
-      <button
-        type="button"
-        onClick={() => setIsFullScreen(!isFullScreen)}
-        className="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 px-3 py-1.5 rounded-lg text-sm flex items-center justify-center gap-1.5 font-medium transition"
-        title={isFullScreen ? "Exit Full Screen Mode" : "Expand Map to Full Screen"}
-      >
-        {isFullScreen ? (
-          <>
-            <Minimize2 size={14} />
-            <span>Exit Full Screen</span>
-          </>
-        ) : (
-          <>
-            <Maximize2 size={14} />
-            <span>Full Screen</span>
-          </>
-        )}
-      </button>
-    </div>
-  </div>
-
-  {/* Leaflet Dynamic Map Render Area */}
-  <div className="flex-1 min-h-105 rounded-lg overflow-hidden border border-slate-800 relative z-0">
-    <DisasterMap selectedLocation={selectedLocation} locationName={locationName} />
-  </div>
-</section>
-
-        {/* RIGHT COLUMN: FEATURES 2 & 3 */}
-        <div className="flex flex-col gap-6">
-          {/* FEATURE 2: CONNECT WITH NEARBY PEOPLE */}
-          <section className="bg-slate-900 border border-slate-800 rounded-xl p-4 flex flex-col h-95 shadow-xl">
-            <h2 className="text-base font-bold text-white flex items-center gap-2 pb-3 border-b border-slate-800">
-              <Users className="text-blue-400" /> Connect with Nearby People
-              {userId && <span className="text-xs text-slate-500">({userId})</span>}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+            <h2 className="text-lg font-bold text-white flex items-center gap-2">
+              <AlertTriangle className="text-amber-500" /> Real-Time Disaster Map 
             </h2>
 
-            {/* Chat Stream Window */}
-            <div className="flex-1 overflow-y-auto space-y-3 py-3 pr-1">
-              {messages.length === 0 ? (
-                <div className="text-xs text-slate-500 text-center py-8">
-                  No active local messages. Send a message to connect with people nearby.
-                </div>
-              ) : (
-                messages.map((msg, idx) => (
-                  <div
-                    key={idx}
-                    className={`p-2.5 rounded-lg text-xs ${
-                      msg.type === "SOS_ALERT"
-                        ? "bg-red-950/80 border border-red-500/50 text-red-200"
-                        : msg.sender_id === userId
-                        ? "bg-blue-600 text-white ml-auto max-w-[85%]"
-                        : "bg-slate-800 text-slate-200 max-w-[85%]"
-                    }`}
-                  >
-                    {msg.type === "SOS_ALERT" && (
-                      <div className="font-bold text-red-400 mb-1">🚨 EMERGENCY ALERT</div>
-                    )}
-                    <div>{msg.text || msg.message}</div>
-                    {msg.ai_assessment && (
-                      <div className="mt-1.5 text-[11px] bg-red-900/40 text-red-300 p-1.5 rounded border border-red-800">
-                        🤖 <strong>AI Assessment:</strong> {msg.ai_assessment}
-                      </div>
-                    )}
-                  </div>
-                ))
-              )}
-            </div>
+            <div className="flex flex-col sm:flex-row w-full sm:w-auto gap-2">
+              <form onSubmit={handleLocationSearch} className="flex w-full sm:w-auto gap-2">
+                <input
+                  type="text"
+                  className="bg-slate-800 border border-slate-700 text-white rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 w-full sm:w-64"
+                  placeholder="Search region (e.g., Assam, Kolkata)..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+                <button
+                  type="submit"
+                  disabled={isSearching}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-sm flex items-center gap-1 font-medium transition disabled:opacity-50"
+                >
+                  <Search size={14} /> {isSearching ? "..." : "Search"}
+                </button>
+              </form>
 
-            {/* Message Input Box */}
-            <div className="flex gap-2 pt-2 border-t border-slate-800">
-              <input
-                type="text"
-                className="flex-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Message nearby users..."
-                value={inputText}
-                onChange={(e) => setInputText(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-              />
               <button
-                onClick={sendMessage}
-                className="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-lg transition"
+                type="button"
+                onClick={() => setIsFullScreen(!isFullScreen)}
+                className="bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 px-3 py-1.5 rounded-lg text-sm flex items-center justify-center gap-1.5 font-medium transition"
               >
-                <Send size={14} />
+                {isFullScreen ? (
+                  <>
+                    <Minimize2 size={14} />
+                    <span>Exit Full Screen</span>
+                  </>
+                ) : (
+                  <>
+                    <Maximize2 size={14} />
+                    <span>Full Screen</span>
+                  </>
+                )}
               </button>
             </div>
-          </section>
+          </div>
 
-          {/* FEATURE 3: FIND HELP (BROADCAST EMERGENCY SOS) */}
+          <div className="flex-1 min-h-105 rounded-lg overflow-hidden border border-slate-800 relative z-0">
+            <DisasterMap selectedLocation={selectedLocation} locationName={locationName} />
+          </div>
+        </section>
+
+        {/* RIGHT COLUMN */}
+        <div className="flex flex-col gap-6">
+          {/* FEATURE 2: BORDER BEAM PANEL - CONNECT WITH NEARBY PEOPLE */}
+          <BorderBeamPanel className="p-5 flex flex-col justify-between shadow-xl" beams={2} radius={12}>
+            {!isChatActive ? (
+              <div className="flex flex-col gap-4">
+                <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                  <h2 className="text-base font-bold text-black flex items-center gap-2">
+                    <Users className="text-blue-400" /> Connect with Nearby People
+                  </h2>
+                  <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-ping" />
+                </div>
+
+                <p className="text-xs text-slate-400">
+                  Select your exact region to join the verified local communication frequency.
+                </p>
+
+                {/* REGIONAL INPUT FORM */}
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div>
+                    <label className="text-[10px] text-slate-400 mb-1 block">Country</label>
+                    <input
+                      type="text"
+                      value={region.country}
+                      onChange={(e) => setRegion({ ...region, country: e.target.value })}
+                      className="w-full bg-slate-900 border border-slate-800 rounded px-2.5 py-1.5 text-white focus:outline-none focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-slate-400 mb-1 block">State</label>
+                    <input
+                      type="text"
+                      value={region.state}
+                      onChange={(e) => setRegion({ ...region, state: e.target.value })}
+                      className="w-full bg-slate-900 border border-slate-800 rounded px-2.5 py-1.5 text-white focus:outline-none focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-slate-400 mb-1 block">District</label>
+                    <input
+                      type="text"
+                      value={region.district}
+                      onChange={(e) => setRegion({ ...region, district: e.target.value })}
+                      className="w-full bg-slate-900 border border-slate-800 rounded px-2.5 py-1.5 text-white focus:outline-none focus:border-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] text-slate-400 mb-1 block">City/Village</label>
+                    <input
+                      type="text"
+                      value={region.city}
+                      onChange={(e) => setRegion({ ...region, city: e.target.value })}
+                      className="w-full bg-slate-900 border border-slate-800 rounded px-2.5 py-1.5 text-white focus:outline-none focus:border-blue-500"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setIsChatActive(true)}
+                  className="mt-2 w-full bg-blue-600 hover:bg-blue-700 text-white font-medium text-xs py-2.5 px-4 rounded-lg flex items-center justify-center gap-2 transition"
+                >
+                  <MessageSquare size={14} /> Open Region Chat <ArrowRight size={14} />
+                </button>
+              </div>
+            ) : (
+              <div className="flex flex-col h-80">
+                <div className="flex items-center justify-between pb-2 border-b border-slate-800">
+                  <div className="flex items-center gap-2">
+                    <MapPin size={14} className="text-emerald-400" />
+                    <span className="text-xs font-semibold text-white">
+                      {region.city}, {region.district}
+                    </span>
+                  </div>
+                  <button
+                    onClick={() => setIsChatActive(false)}
+                    className="text-[10px] text-slate-400 hover:text-white underline"
+                  >
+                    Change Region
+                  </button>
+                </div>
+
+                {/* Chat Messages Window */}
+                <div className="flex-1 overflow-y-auto space-y-2 py-3 pr-1 my-2">
+                  {messages.length === 0 ? (
+                    <div className="text-xs text-slate-500 text-center py-8">
+                      No active messages in {region.city}. Send a message to connect.
+                    </div>
+                  ) : (
+                    messages.map((msg, idx) => (
+                      <div
+                        key={idx}
+                        className={`p-2 rounded-lg text-xs ${
+                          msg.type === "SOS_ALERT"
+                            ? "bg-red-950/80 border border-red-500/50 text-red-200"
+                            : msg.sender_id === userId
+                            ? "bg-blue-600 text-white ml-auto max-w-[85%]"
+                            : "bg-slate-800 text-slate-200 max-w-[85%]"
+                        }`}
+                      >
+                        {msg.type === "SOS_ALERT" && (
+                          <div className="font-bold text-red-400 mb-1">🚨 EMERGENCY ALERT</div>
+                        )}
+                        <div>{msg.text || msg.message}</div>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                {/* Input Bar */}
+                <div className="flex gap-2 pt-2 border-t border-slate-800">
+                  <input
+                    type="text"
+                    className="flex-1 bg-slate-900 border border-slate-800 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    placeholder={`Message ${region.city}...`}
+                    value={inputText}
+                    onChange={(e) => setInputText(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && sendMessage()}
+                  />
+                  <button
+                    onClick={sendMessage}
+                    className="bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-lg transition"
+                  >
+                    <Send size={14} />
+                  </button>
+                </div>
+              </div>
+            )}
+          </BorderBeamPanel>
+
+          {/* FEATURE 3: FIND HELP */}
           <section className="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-xl flex flex-col justify-between">
             <div>
               <h2 className="text-base font-bold text-white flex items-center gap-2 mb-2">
