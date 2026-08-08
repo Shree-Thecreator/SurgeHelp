@@ -36,7 +36,6 @@ CUSTOM_DANGER_ZONES = [
     }
 ]
 
-r
 class ConnectionManager:
     def __init__(self):
         self.active_connections: Dict[str, WebSocket] = {}
