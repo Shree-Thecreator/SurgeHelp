@@ -331,7 +331,7 @@ export default function Home() {
               {!isChatActive ? (
                 <div className="flex flex-col gap-4">
                   <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                    <h2 className="text-base font-bold text-white flex items-center gap-2">
+                    <h2 className="text-base font-bold text-black flex items-center gap-2">
                       <Users className="text-blue-400" /> Connect with Nearby People
                     </h2>
                     <span className="flex h-2 w-2 rounded-full bg-emerald-500 animate-ping" />
@@ -393,7 +393,7 @@ export default function Home() {
                   <div className="flex items-center justify-between pb-2 border-b border-slate-800">
                     <div className="flex items-center gap-2">
                       <MapPin size={14} className="text-emerald-400" />
-                      <span className="text-xs font-semibold text-white">
+                      <span className="text-xs font-semibold text-black">
                         {region.city}, {region.district}
                       </span>
                     </div>
